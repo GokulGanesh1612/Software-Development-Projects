@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Sudoku Solver</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      min-height: 100%;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #e0c3fc, #8ec5fc);
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+      background-size: cover;
+    }
+
+    .container {
+      text-align: center;
+      background: #ffffffcc;
+      padding: 50px 30px 30px;
+      border-radius: 15px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+      max-width: 800px;
+      margin: 40px auto;
+    }
+
+    table {
+      border-collapse: collapse;
+      margin: 20px auto;
+    }
+
+    td {
+      border: 1px solid #999;
+      width: 40px;
+      height: 40px;
+      text-align: center;
+    }
+
+    td:nth-child(3), td:nth-child(6) {
+      border-right: 2px solid #333;
+    }
+
+    tr:nth-child(3) td, tr:nth-child(6) td {
+      border-bottom: 2px solid #333;
+    }
+
+    input[type="number"] {
+      width: 100%;
+      height: 100%;
+      border: none;
+      text-align: center;
+      font-size: 18px;
+      background: transparent;
+    }
+
+    input[type="number"]:focus {
+      outline: none;
+      background: #e0f7fa;
+    }
+
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      margin: 5px;
+      background: #4caf50;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #388e3c;
+    }
+
+    .clear-btn {
+      background: #f44336;
+    }
+
+    .clear-btn:hover {
+      background: #d32f2f;
+    }
+
+    .message {
+      margin-top: 10px;
+      padding: 10px;
+      border-radius: 8px;
+      font-weight: bold;
+      display: none;
+    }
+
+    .success {
+      background-color: #c8e6c9;
+      color: #2e7d32;
+    }
+
+    .error {
+      background-color: #ffcdd2;
+      color: #c62828;
+    }
+
+    .log {
+      max-height: 200px;
+      overflow-y: auto;
+      text-align: left;
+      background: #f4f4f4;
+      padding: 10px;
+      margin-top: 15px;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h2>🧩 Sudoku Solver</h2>
+    <table id="sudoku-grid"></table>
+    <button onclick="solveSudokuAnimated()">Solve Step-by-Step</button>
+    <button class="clear-btn" onclick="clearGrid()">Clear Grid</button>
+    <div class="message" id="messageBox"></div>
+    <div class="log" id="logBox"></div>
+  </div>
+
+  <script>
+    const grid = document.getElementById("sudoku-grid");
+    const messageBox = document.getElementById("messageBox");
+    const logBox = document.getElementById("logBox");
+
+    // Create 9x9 input grid
+    for (let row = 0; row < 9; row++) {
+      const tr = document.createElement("tr");
+      for (let col = 0; col < 9; col++) {
+        const td = document.createElement("td");
+        const input = document.createElement("input");
+        input.type = "number";
+        input.min = "1";
+        input.max = "9";
+        td.appendChild(input);
+        tr.appendChild(td);
+      }
+      grid.appendChild(tr);
+    }
+
+    function getGridValues() {
+      const values = [];
+      const rows = grid.getElementsByTagName("tr");
+      for (let r = 0; r < 9; r++) {
+        const row = [];
+        const cells = rows[r].getElementsByTagName("input");
+        for (let c = 0; c < 9; c++) {
+          const val = parseInt(cells[c].value);
+          row.push(isNaN(val) ? 0 : val);
+        }
+        values.push(row);
+      }
+      return values;
+    }
+
+    function setGridValues(values) {
+      const rows = grid.getElementsByTagName("tr");
+      for (let r = 0; r < 9; r++) {
+        const cells = rows[r].getElementsByTagName("input");
+        for (let c = 0; c < 9; c++) {
+          cells[c].value = values[r][c] || "";
+        }
+      }
+    }
+
+    function clearGrid() {
+      const inputs = grid.getElementsByTagName("input");
+      for (let input of inputs) {
+        input.value = "";
+      }
+      messageBox.style.display = "none";
+      logBox.innerHTML = "";
+    }
+
+    function isValid(board, row, col, num) {
+      for (let i = 0; i < 9; i++) {
+        if (board[row][i] === num || board[i][col] === num) return false;
+        const boxRow = 3 * Math.floor(row / 3) + Math.floor(i / 3);
+        const boxCol = 3 * Math.floor(col / 3) + i % 3;
+        if (board[boxRow][boxCol] === num) return false;
+      }
+      return true;
+    }
+
+    async function solveSudokuAnimated() {
+      const board = getGridValues();
+      logBox.innerHTML = "";
+      messageBox.style.display = "none";
+
+      async function solve(board) {
+        for (let row = 0; row < 9; row++) {
+          for (let col = 0; col < 9; col++) {
+            if (board[row][col] === 0) {
+              for (let num = 1; num <= 9; num++) {
+                if (isValid(board, row, col, num)) {
+                  board[row][col] = num;
+                  updateCell(row, col, num);
+                  logStep(`Trying ${num} at (${row + 1}, ${col + 1})`);
+                  await delay(50);
+                  if (await solve(board)) return true;
+                  board[row][col] = 0;
+                  updateCell(row, col, "");
+                  logStep(`Backtracking at (${row + 1}, ${col + 1})`);
+                  await delay(50);
+                }
+              }
+              return false;
+            }
+          }
+        }
+        return true;
+      }
+
+      function updateCell(row, col, value) {
+        const cell = grid.rows[row].cells[col].firstChild;
+        cell.value = value;
+      }
+
+      function delay(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+      }
+
+      function logStep(text) {
+        const entry = document.createElement("div");
+        entry.textContent = text;
+        logBox.appendChild(entry);
+        logBox.scrollTop = logBox.scrollHeight;
+      }
+
+      const solved = await solve(board);
+      if (solved) {
+        showMessage("✅ Sudoku Solved!", "success");
+      } else {
+        showMessage("❌ No solution found.", "error");
+      }
+    }
+
+    function showMessage(text, type) {
+      messageBox.textContent = text;
+      messageBox.className = `message ${type}`;
+      messageBox.style.display = "block";
+    }
+  </script>
+
+</body>
+</html>

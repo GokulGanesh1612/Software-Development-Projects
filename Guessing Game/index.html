@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Guess the Number</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #f6d365, #fda085);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .game-container {
+      background: #fff;
+      padding: 40px 30px;
+      border-radius: 20px;
+      box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      width: 320px;
+      position: relative;
+    }
+
+    h2 {
+      margin-bottom: 20px;
+      color: #333;
+    }
+
+    input, button {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      font-size: 16px;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+    }
+
+    button {
+      background: #f76c6c;
+      color: white;
+      border: none;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    button:hover {
+      background: #e85a5a;
+    }
+
+    .feedback {
+      margin-top: 20px;
+      font-size: 18px;
+      color: #444;
+    }
+
+    .success {
+      color: green;
+      font-weight: bold;
+    }
+
+    .attempts {
+      margin-top: 10px;
+      font-size: 16px;
+      color: #555;
+    }
+
+    .confetti {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .confetti-piece {
+      width: 10px;
+      height: 10px;
+      background-color: #f76c6c;
+      position: absolute;
+      animation: fall 1s ease-out forwards;
+    }
+
+    @keyframes fall {
+      0% {
+        transform: translateY(0) rotate(0deg);
+        opacity: 1;
+      }
+      100% {
+        transform: translateY(300px) rotate(720deg);
+        opacity: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="game-container">
+    <h2>🎯 Guess the Number</h2>
+    <p>I'm thinking of a number between 1 and 100</p>
+    <input type="number" id="guessInput" placeholder="Enter your guess">
+    <button onclick="checkGuess()">Submit Guess</button>
+    <button onclick="resetGame()">🔁 Reset Game</button>
+    <div class="feedback" id="feedback"></div>
+    <div class="attempts" id="attempts"></div>
+    <div class="confetti" id="confetti"></div>
+  </div>
+
+  <script>
+    let secretNumber = Math.floor(Math.random() * 100) + 1;
+    let attempts = 0;
+
+    function checkGuess() {
+      const guess = parseInt(document.getElementById("guessInput").value);
+      const feedback = document.getElementById("feedback");
+      const attemptsDisplay = document.getElementById("attempts");
+
+      if (isNaN(guess) || guess < 1 || guess > 100) {
+        feedback.innerHTML = "❗ Please enter a number between 1 and 100.";
+        feedback.className = "feedback";
+        return;
+      }
+
+      attempts++;
+
+      if (guess < secretNumber) {
+        feedback.innerHTML = "📉 Too low! Try again.";
+        feedback.className = "feedback";
+      } else if (guess > secretNumber) {
+        feedback.innerHTML = "📈 Too high! Try again.";
+        feedback.className = "feedback";
+      } else {
+        feedback.innerHTML = `🎉 Correct! The number was ${secretNumber}.`;
+        feedback.className = "feedback success";
+        launchConfetti();
+      }
+
+      attemptsDisplay.innerHTML = `Attempts: ${attempts}`;
+    }
+
+    function resetGame() {
+      secretNumber = Math.floor(Math.random() * 100) + 1;
+      attempts = 0;
+      document.getElementById("guessInput").value = "";
+      document.getElementById("feedback").innerHTML = "";
+      document.getElementById("attempts").innerHTML = "";
+      document.getElementById("confetti").innerHTML = "";
+    }
+
+    function launchConfetti() {
+      const confettiContainer = document.getElementById("confetti");
+      confettiContainer.innerHTML = "";
+      for (let i = 0; i < 30; i++) {
+        const piece = document.createElement("div");
+        piece.classList.add("confetti-piece");
+        piece.style.left = Math.random() * 100 + "%";
+        piece.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 70%)`;
+        piece.style.animationDuration = (Math.random() * 1 + 0.5) + "s";
+        confettiContainer.appendChild(piece);
+      }
+    }
+  </script>
+
+</body>
+</html>
